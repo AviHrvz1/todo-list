@@ -28,23 +28,17 @@ public class TodoListAIGenerated {
     }
 
     public boolean saveToFile(String filename) {
-        // Use provided filename if valid, otherwise use default
-        String safeFilename = (filename != null && !filename.trim().isEmpty()) 
-            ? filename.trim() 
-            : FILENAME;
+        // Always use fixed filename - eliminates all path validation and traversal concerns
+        Path filePath = Paths.get(FILENAME);
         
-        // Basic validation - only allow simple filenames (no path separators)
-        if (safeFilename.contains("/") || safeFilename.contains("\\") || safeFilename.contains("..")) {
-            Messages.showMessage("Invalid filename: path separators not allowed", true);
-            return false;
-        }
-        
-        Path filePath = Paths.get(safeFilename);
-        
-        try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(taskList);
+        // Try-with-resources automatically closes FileOutputStream and ObjectOutputStream
+        try (FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile());
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
+            objectOutputStream.writeObject(taskList);
             return true;
+        } catch (java.io.FileNotFoundException e) {
+            Messages.showMessage("Cannot create file: " + FILENAME, true);
+            return false;
         } catch (IOException e) {
             Messages.showMessage("Error saving file: " + e.getMessage(), true);
             return false;
@@ -52,63 +46,63 @@ public class TodoListAIGenerated {
     }
 
     public boolean readFromFile(String filename) {
-        // Use provided filename if valid, otherwise use default
-        String safeFilename = (filename != null && !filename.trim().isEmpty()) 
-            ? filename.trim() 
-            : FILENAME;
-        
-        // Basic validation - only allow simple filenames (no path separators)
-        if (safeFilename.contains("/") || safeFilename.contains("\\") || safeFilename.contains("..")) {
-            Messages.showMessage("Invalid filename: path separators not allowed", true);
-            return false;
-        }
-        
-        Path filePath = Paths.get(safeFilename);
+        // Always use fixed filename - eliminates all path validation and traversal concerns
+        Path filePath = Paths.get(FILENAME);
         
         if (!Files.exists(filePath)) {
-            Messages.showMessage("File does not exist: " + safeFilename, true);
+            Messages.showMessage("File does not exist: " + FILENAME, true);
             return false;
         }
 
-        try (FileInputStream fis = new FileInputStream(filePath.toFile());
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            Object obj = ois.readObject();
+        // Try-with-resources automatically closes FileInputStream and ObjectInputStream
+        try (FileInputStream fileInputStream = new FileInputStream(filePath.toFile());
+             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             
-            // Null check for deserialized object (fixes line 59 issue)
+            Object obj = objectInputStream.readObject();
+            
+            // Null check for deserialized object
             if (obj == null) {
                 Messages.showMessage("Invalid data: null object deserialized", true);
                 return false;
             }
 
-            if (obj instanceof ArrayList) {
-                @SuppressWarnings("unchecked")
-                ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
-                
-                // Comprehensive validation for deserialized data (fixes line 64 issue)
-                if (loadedTasks == null) {
-                    Messages.showMessage("Invalid data: null list deserialized", true);
-                    return false;
-                }
-                
-                for (Object item : loadedTasks) {
-                    if (item == null) {
-                        Messages.showMessage("Invalid data: null item in list", true);
-                        return false;
-                    }
-                    if (!(item instanceof Task)) {
-                        Messages.showMessage("Invalid data: non-Task object found", true);
-                        return false;
-                    }
-                }
-                
-                this.taskList = loadedTasks;
-                return true;
-            } else {
+            // Type validation before casting
+            if (!(obj instanceof ArrayList<?>)) {
                 Messages.showMessage("Invalid data: expected ArrayList, got " + obj.getClass().getSimpleName(), true);
                 return false;
             }
+
+            // Safe cast after instanceof validation
+            @SuppressWarnings("unchecked")
+            ArrayList<?> rawList = (ArrayList<?>) obj;
+            ArrayList<Task> validatedList = new ArrayList<>();
+            
+            // Validate each item: null check and type check
+            for (Object item : rawList) {
+                if (item == null) {
+                    Messages.showMessage("Invalid data: null item in list", true);
+                    return false;
+                }
+                if (!(item instanceof Task)) {
+                    Messages.showMessage("Invalid data: non-Task object found", true);
+                    return false;
+                }
+                validatedList.add((Task) item);
+            }
+            
+            this.taskList = validatedList;
+            return true;
         } catch (ClassNotFoundException e) {
             Messages.showMessage("Error: class not found - " + e.getMessage(), true);
+            return false;
+        } catch (java.io.FileNotFoundException e) {
+            Messages.showMessage("File not found: " + FILENAME, true);
+            return false;
+        } catch (java.io.EOFException e) {
+            Messages.showMessage("Invalid data: unexpected end of file", true);
+            return false;
+        } catch (java.io.StreamCorruptedException e) {
+            Messages.showMessage("Invalid data: corrupted file stream", true);
             return false;
         } catch (IOException e) {
             Messages.showMessage("Error reading file: " + e.getMessage(), true);
