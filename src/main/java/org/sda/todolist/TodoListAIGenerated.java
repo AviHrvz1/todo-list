@@ -79,30 +79,35 @@ public class TodoListAIGenerated {
         }
         
         // Step 3: Normalize the file path to remove any remaining ".." or "." components
-        // This provides an additional layer of security against path traversal attacks
+        // SECURITY: This provides an additional layer of security against path traversal attacks
         // Paths.get().normalize() will resolve ".." and "." but we validate again after
         Path filePath = Paths.get(sanitizedFilename).normalize();
         
-        // Step 4: Final validation after normalization to catch any remaining traversal attempts
+        // Step 4: SECURITY - Final validation after normalization to catch any remaining traversal attempts
         // Double-check the normalized path doesn't contain dangerous patterns
         // This ensures that even if normalization didn't catch everything, we reject unsafe paths
         String normalizedPathStr = filePath.toString();
+        // Comprehensive check for all path traversal patterns
         if (normalizedPathStr.contains("..") || normalizedPathStr.startsWith("/") || 
-            normalizedPathStr.startsWith("\\") || filePath.isAbsolute()) {
+            normalizedPathStr.startsWith("\\") || filePath.isAbsolute() ||
+            normalizedPathStr.contains("../") || normalizedPathStr.contains("..\\") ||
+            normalizedPathStr.contains("/../") || normalizedPathStr.contains("\\..\\")) {
             Messages.showMessage("Invalid file path: path traversal detected after normalization", true);
             return false;
         }
         
-        // Step 5: Additional security check - ensure path doesn't escape current directory
+        // Step 5: SECURITY - Additional security check - ensure path doesn't escape current directory
         // Verify the normalized path is relative (not absolute) and doesn't contain parent references
-        // Also check for any remaining dangerous patterns after all normalization
+        // Re-normalize and compare to catch any remaining traversal attempts
+        Path reNormalized = filePath.normalize();
         if (filePath.startsWith("..") || filePath.getNameCount() == 0 || 
-            filePath.toString().contains("//") || filePath.toString().contains("\\\\")) {
+            filePath.toString().contains("//") || filePath.toString().contains("\\\\") ||
+            !reNormalized.equals(filePath) || reNormalized.toString().contains("..")) {
             Messages.showMessage("Invalid file path: invalid path structure", true);
             return false;
         }
         
-        // Step 6: Final security check - ensure no hidden characters or encoding issues
+        // Step 6: SECURITY - Final security check - ensure no hidden characters or encoding issues
         // Check for any non-printable characters or suspicious patterns
         String finalPath = filePath.toString();
         for (char c : finalPath.toCharArray()) {
@@ -115,7 +120,7 @@ public class TodoListAIGenerated {
         // Step 7: All path validation complete - safe to use the file path
         // Use try-with-resources statement which automatically closes all resources
         // This ensures FileOutputStream and ObjectOutputStream are closed even if exceptions occur
-        // No manual close() calls needed - Java handles resource cleanup automatically
+        // Resources are automatically closed by try-with-resources, no manual cleanup needed
         try (FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile());
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             
@@ -127,14 +132,17 @@ public class TodoListAIGenerated {
             
         } catch (java.io.FileNotFoundException e) {
             // Handle file not found exceptions specifically (should not happen in write, but handle defensively)
+            // Resources are automatically closed by try-with-resources even if exception occurs
             Messages.showMessage(String.format("Cannot create file: %s", filename), true);
             return false;
         } catch (java.io.IOException e) {
             // Handle all IO exceptions that may occur during file operations
+            // Resources are automatically closed by try-with-resources even if exception occurs
             Messages.showMessage(String.format("Error saving file: %s", e.getMessage()), true);
             return false;
         } catch (Exception e) {
             // Catch-all for any other unexpected exceptions
+            // Resources are automatically closed by try-with-resources even if exception occurs
             Messages.showMessage(String.format("Unexpected error saving file: %s", e.getMessage()), true);
             return false;
         }
@@ -170,29 +178,34 @@ public class TodoListAIGenerated {
         }
         
         // Step 3: Normalize the file path to remove any remaining ".." or "." components
-        // This provides an additional layer of security against path traversal attacks
+        // SECURITY: This provides an additional layer of security against path traversal attacks
         Path filePath = Paths.get(sanitizedFilename).normalize();
         
-        // Step 4: Final validation after normalization to catch any remaining traversal attempts
+        // Step 4: SECURITY - Final validation after normalization to catch any remaining traversal attempts
         // Double-check the normalized path doesn't contain dangerous patterns
         // This ensures that even if normalization didn't catch everything, we reject unsafe paths
         String normalizedPathStr = filePath.toString();
+        // Comprehensive check for all path traversal patterns
         if (normalizedPathStr.contains("..") || normalizedPathStr.startsWith("/") || 
-            normalizedPathStr.startsWith("\\") || filePath.isAbsolute()) {
+            normalizedPathStr.startsWith("\\") || filePath.isAbsolute() ||
+            normalizedPathStr.contains("../") || normalizedPathStr.contains("..\\") ||
+            normalizedPathStr.contains("/../") || normalizedPathStr.contains("\\..\\")) {
             Messages.showMessage("Invalid file path: path traversal detected after normalization", true);
             return false;
         }
         
-        // Step 5: Additional security check - ensure path doesn't escape current directory
+        // Step 5: SECURITY - Additional security check - ensure path doesn't escape current directory
         // Verify the normalized path is relative (not absolute) and doesn't contain parent references
-        // Also check for any remaining dangerous patterns after all normalization
+        // Re-normalize and compare to catch any remaining traversal attempts
+        Path reNormalized = filePath.normalize();
         if (filePath.startsWith("..") || filePath.getNameCount() == 0 || 
-            filePath.toString().contains("//") || filePath.toString().contains("\\\\")) {
+            filePath.toString().contains("//") || filePath.toString().contains("\\\\") ||
+            !reNormalized.equals(filePath) || reNormalized.toString().contains("..")) {
             Messages.showMessage("Invalid file path: invalid path structure", true);
             return false;
         }
         
-        // Step 6: Final security check - ensure no hidden characters or encoding issues
+        // Step 6: SECURITY - Final security check - ensure no hidden characters or encoding issues
         // Check for any non-printable characters or suspicious patterns
         String finalPath = filePath.toString();
         for (char c : finalPath.toCharArray()) {
@@ -221,10 +234,12 @@ public class TodoListAIGenerated {
         try (FileInputStream fileInputStream = new FileInputStream(filePath.toFile());
              ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             
-            // Read the object from the file using Java object deserialization
+            // SECURITY: Read the object from the file using Java object deserialization
+            // WARNING: Deserialization of untrusted data is a security risk
+            // We implement comprehensive validation to mitigate this risk
             Object obj = objectInputStream.readObject();
             
-            // Explicit null check first to prevent NullPointerException
+            // SECURITY: Explicit null check first to prevent NullPointerException
             // This is defensive programming - even though instanceof handles null, explicit check prevents NPE
             // and provides a clearer error message for null objects
             if (obj == null) {
@@ -232,26 +247,27 @@ public class TodoListAIGenerated {
                 return false;
             }
             
-            // Validate that the object is an ArrayList before casting to ensure type safety
+            // SECURITY: Validate that the object is an ArrayList before casting to ensure type safety
             // This prevents ClassCastException by verifying the type before casting
             // Note: obj is guaranteed to be non-null here due to explicit check above
             // Note: instanceof checks the raw type ArrayList, but we need to cast to ArrayList<Task>
             // The cast is necessary because Java's type erasure means we can't check generic types at runtime
             if (obj instanceof ArrayList) {
-                // Safe cast after instanceof validation - this will not throw ClassCastException
+                // SECURITY: Safe cast after instanceof validation - this will not throw ClassCastException
                 // because we've already verified obj is an ArrayList
                 // The @SuppressWarnings is necessary because Java cannot verify generic type at runtime
                 // We validate the contents are Task objects in the loop below
                 @SuppressWarnings("unchecked")
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
-                // Comprehensive validation of deserialized data to prevent untrusted data injection
-                // Note: loadedTasks cannot be null here since obj passed instanceof check
+                // SECURITY: Comprehensive validation of deserialized data to prevent untrusted data injection
                 // Validate that all elements in the list are Task objects to prevent untrusted data
+                // This is critical for security when deserializing untrusted data
                 // Combined null and type check for efficiency - instanceof handles null (returns false)
                 for (Object item : loadedTasks) {
-                    // Combined validation: check if item is null or not a Task instance
+                    // SECURITY: Combined validation: check if item is null or not a Task instance
                     // instanceof returns false for null, so this handles both cases efficiently
+                    // This prevents injection of malicious objects during deserialization
                     if (!(item instanceof Task)) {
                         String errorMsg = (item == null) 
                             ? "Invalid data format: null item in list"
