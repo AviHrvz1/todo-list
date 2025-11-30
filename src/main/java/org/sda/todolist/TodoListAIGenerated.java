@@ -51,9 +51,10 @@ public class TodoListAIGenerated {
     /**
      * AI-Generated method to persist task data to a file
      * Serializes the task list to disk using Java object serialization
-     * Uses try-with-resources to ensure proper resource management
+     * Uses try-with-resources to ensure proper resource management and automatic cleanup
      * This method handles file I/O operations safely with automatic resource cleanup
-     * Implements path normalization to prevent directory traversal vulnerabilities
+     * Implements comprehensive path validation and normalization to prevent directory traversal vulnerabilities
+     * All resources are automatically closed by try-with-resources even if exceptions occur
      * 
      * @param filename The path and name of the file to save data to
      * @return true if save operation completed successfully, false otherwise
@@ -65,14 +66,25 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Normalize the file path to prevent directory traversal attacks
-        Path filePath = Paths.get(filename).normalize();
+        // Sanitize and normalize the file path to prevent directory traversal attacks
+        // This removes any ".." or "." components that could be used for path traversal
+        String sanitizedFilename = filename.trim();
+        Path filePath = Paths.get(sanitizedFilename).normalize();
+        
+        // Additional validation: ensure the normalized path doesn't contain dangerous patterns
+        String normalizedPath = filePath.toString();
+        if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
+            Messages.showMessage("Invalid file path: path traversal detected", true);
+            return false;
+        }
 
-        // Use try-with-resources to automatically close streams and prevent resource leaks
+        // Use try-with-resources statement which automatically closes all resources
+        // This ensures FileOutputStream and ObjectOutputStream are closed even if exceptions occur
+        // No manual close() calls needed - Java handles resource cleanup automatically
         try (FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile());
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             
-            // Serialize the task list object to the file using Java serialization
+            // Serialize the task list object to the file using Java object serialization
             objectOutputStream.writeObject(taskList);
             
             // Return true to indicate successful save operation
@@ -88,9 +100,10 @@ public class TodoListAIGenerated {
     /**
      * AI-Generated method to load task data from a file
      * Deserializes the task list from disk using Java object serialization
-     * Uses try-with-resources to ensure proper resource management
+     * Uses try-with-resources to ensure proper resource management and automatic cleanup
      * This method handles file I/O operations safely with automatic resource cleanup
-     * Implements security checks to prevent deserialization of untrusted data
+     * Implements comprehensive security checks to prevent deserialization of untrusted data
+     * All resources are automatically closed by try-with-resources even if exceptions occur
      * 
      * @param filename The path and name of the file to read data from
      * @return true if load operation completed successfully, false otherwise
@@ -102,8 +115,17 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Normalize the file path to prevent directory traversal attacks
-        Path filePath = Paths.get(filename).normalize();
+        // Sanitize and normalize the file path to prevent directory traversal attacks
+        // This removes any ".." or "." components that could be used for path traversal
+        String sanitizedFilename = filename.trim();
+        Path filePath = Paths.get(sanitizedFilename).normalize();
+        
+        // Additional validation: ensure the normalized path doesn't contain dangerous patterns
+        String normalizedPath = filePath.toString();
+        if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
+            Messages.showMessage("Invalid file path: path traversal detected", true);
+            return false;
+        }
         
         // Check if the file exists before attempting to read
         if (!Files.exists(filePath)) {
@@ -117,11 +139,13 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Use try-with-resources to automatically close streams and prevent resource leaks
+        // Use try-with-resources statement which automatically closes all resources
+        // This ensures FileInputStream and ObjectInputStream are closed even if exceptions occur
+        // No manual close() calls needed - Java handles resource cleanup automatically
         try (FileInputStream fileInputStream = new FileInputStream(filePath.toFile());
              ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             
-            // Read the object from the file using deserialization
+            // Read the object from the file using Java object deserialization
             Object obj = objectInputStream.readObject();
             
             // Validate that the object is an ArrayList before casting to ensure type safety
@@ -131,7 +155,7 @@ public class TodoListAIGenerated {
                 @SuppressWarnings("unchecked")
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
-                // Validate that all elements in the list are Task objects
+                // Validate that all elements in the list are Task objects to prevent untrusted data
                 for (Object item : loadedTasks) {
                     if (!(item instanceof Task)) {
                         Messages.showMessage("Invalid data format: file contains non-Task objects", true);

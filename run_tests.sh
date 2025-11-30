@@ -39,16 +39,15 @@ echo ""
 # Run tests
 echo "[4/4] Running unit tests..."
 echo "----------------------------------------"
-java -cp "/tmp/test_output:$JUNIT_JAR:build/libs/*" org.junit.platform.console.ConsoleLauncher --class-path /tmp/test_output --select-class org.sda.todolist.TodoListAIGeneratedTest 2>&1
-
-TEST_RESULT=$?
-echo ""
-echo "----------------------------------------"
-if [ $TEST_RESULT -eq 0 ]; then
+if java -cp "/tmp/test_output:$JUNIT_JAR:build/libs/*" org.junit.platform.console.ConsoleLauncher --class-path /tmp/test_output --select-class org.sda.todolist.TodoListAIGeneratedTest 2>&1; then
+    echo ""
+    echo "----------------------------------------"
     echo "✓ ALL TESTS PASSED"
     echo "========================================="
     exit 0
 else
+    echo ""
+    echo "----------------------------------------"
     echo "✗ SOME TESTS FAILED"
     echo "========================================="
     exit 1
