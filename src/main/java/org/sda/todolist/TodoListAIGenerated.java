@@ -103,7 +103,7 @@ public class TodoListAIGenerated {
             
         } catch (IOException e) {
             // Handle IO exceptions that may occur during file operations
-            Messages.showMessage("Error saving file: " + e.getMessage(), true);
+            Messages.showMessage(String.format("Error saving file: %s", e.getMessage()), true);
             return false;
         }
     }
@@ -152,13 +152,13 @@ public class TodoListAIGenerated {
         // Step 5: All path validation complete - safe to use the file path
         // Check if the file exists before attempting to read
         if (!Files.exists(filePath)) {
-            Messages.showMessage("The data file, i.e., " + filename + " does not exist", true);
+            Messages.showMessage(String.format("The data file, i.e., %s does not exist", filename), true);
             return false;
         }
-
+        
         // Check if the file is readable before attempting to read
         if (!Files.isReadable(filePath)) {
-            Messages.showMessage("The data file, i.e., " + filename + " is not readable", true);
+            Messages.showMessage(String.format("The data file, i.e., %s is not readable", filename), true);
             return false;
         }
 
@@ -180,12 +180,7 @@ public class TodoListAIGenerated {
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
                 // Comprehensive validation of deserialized data to prevent untrusted data injection
-                // Check if the list is null (defensive programming to prevent NPE)
-                if (loadedTasks == null) {
-                    Messages.showMessage("Invalid data format: null list detected", true);
-                    return false;
-                }
-                
+                // Note: loadedTasks cannot be null here since obj passed instanceof check
                 // Validate that all elements in the list are Task objects to prevent untrusted data
                 // Iterate through each element and verify it is a valid Task instance
                 for (Object item : loadedTasks) {
@@ -208,17 +203,17 @@ public class TodoListAIGenerated {
                 return true;
             } else {
                 // Handle case where file contains invalid data format
-                Messages.showMessage("Invalid data format in file: " + filename, true);
+                Messages.showMessage(String.format("Invalid data format in file: %s", filename), true);
                 return false;
             }
             
         } catch (IOException e) {
             // Handle IO exceptions that may occur during file operations
-            Messages.showMessage("Error reading file: " + e.getMessage(), true);
+            Messages.showMessage(String.format("Error reading file: %s", e.getMessage()), true);
             return false;
         } catch (ClassNotFoundException e) {
             // Handle class not found exceptions during deserialization
-            Messages.showMessage("Error deserializing data: " + e.getMessage(), true);
+            Messages.showMessage(String.format("Error deserializing data: %s", e.getMessage()), true);
             return false;
         } catch (ClassCastException e) {
             // Handle class cast exceptions that may occur during type conversion
