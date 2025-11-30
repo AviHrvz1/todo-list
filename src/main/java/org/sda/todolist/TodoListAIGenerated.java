@@ -66,29 +66,30 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Immediately sanitize the filename to prevent any path traversal attacks
-        // Trim whitespace and validate the input before any path operations
+        // Comprehensive path validation to prevent directory traversal attacks
+        // Step 1: Immediately sanitize the filename by trimming whitespace
         String sanitizedFilename = filename.trim();
         
-        // Validate that the filename doesn't contain dangerous path traversal patterns
-        // Check for ".." and "/" patterns that could be used for directory traversal
+        // Step 2: Validate that the filename doesn't contain dangerous path traversal patterns
+        // Check for ".." (parent directory), "/" (absolute path), and "\" (Windows path) patterns
         if (sanitizedFilename.contains("..") || sanitizedFilename.startsWith("/") || sanitizedFilename.contains("\\")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
             return false;
         }
         
-        // Normalize the file path to remove any remaining ".." or "." components
+        // Step 3: Normalize the file path to remove any remaining ".." or "." components
         // This provides an additional layer of security against path traversal attacks
         Path filePath = Paths.get(sanitizedFilename).normalize();
         
-        // Final validation: ensure the normalized path doesn't contain dangerous patterns
-        // Double-check after normalization to catch any remaining traversal attempts
+        // Step 4: Final validation after normalization to catch any remaining traversal attempts
+        // Double-check the normalized path doesn't contain dangerous patterns
         String normalizedPath = filePath.toString();
         if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
             return false;
         }
-
+        
+        // Step 5: All path validation complete - safe to use the file path
         // Use try-with-resources statement which automatically closes all resources
         // This ensures FileOutputStream and ObjectOutputStream are closed even if exceptions occur
         // No manual close() calls needed - Java handles resource cleanup automatically
@@ -126,29 +127,30 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Immediately sanitize the filename to prevent any path traversal attacks
-        // Trim whitespace and validate the input before any path operations
+        // Comprehensive path validation to prevent directory traversal attacks
+        // Step 1: Immediately sanitize the filename by trimming whitespace
         String sanitizedFilename = filename.trim();
         
-        // Validate that the filename doesn't contain dangerous path traversal patterns
-        // Check for ".." and "/" patterns that could be used for directory traversal
+        // Step 2: Validate that the filename doesn't contain dangerous path traversal patterns
+        // Check for ".." (parent directory), "/" (absolute path), and "\" (Windows path) patterns
         if (sanitizedFilename.contains("..") || sanitizedFilename.startsWith("/") || sanitizedFilename.contains("\\")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
             return false;
         }
         
-        // Normalize the file path to remove any remaining ".." or "." components
+        // Step 3: Normalize the file path to remove any remaining ".." or "." components
         // This provides an additional layer of security against path traversal attacks
         Path filePath = Paths.get(sanitizedFilename).normalize();
         
-        // Final validation: ensure the normalized path doesn't contain dangerous patterns
-        // Double-check after normalization to catch any remaining traversal attempts
+        // Step 4: Final validation after normalization to catch any remaining traversal attempts
+        // Double-check the normalized path doesn't contain dangerous patterns
         String normalizedPath = filePath.toString();
         if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
             return false;
         }
         
+        // Step 5: All path validation complete - safe to use the file path
         // Check if the file exists before attempting to read
         if (!Files.exists(filePath)) {
             Messages.showMessage("The data file, i.e., " + filename + " does not exist", true);
@@ -170,6 +172,12 @@ public class TodoListAIGenerated {
             // Read the object from the file using Java object deserialization
             Object obj = objectInputStream.readObject();
             
+            // Validate that the deserialized object is not null before proceeding
+            if (obj == null) {
+                Messages.showMessage("Invalid data format: null object deserialized", true);
+                return false;
+            }
+            
             // Validate that the object is an ArrayList before casting to ensure type safety
             if (obj instanceof ArrayList) {
                 // Cast the object to ArrayList<Task> after type validation
@@ -178,7 +186,7 @@ public class TodoListAIGenerated {
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
                 // Comprehensive validation of deserialized data to prevent untrusted data injection
-                // First, check if the list is null (should not happen, but defensive programming)
+                // Check if the list is null (defensive programming to prevent NPE)
                 if (loadedTasks == null) {
                     Messages.showMessage("Invalid data format: null list detected", true);
                     return false;
