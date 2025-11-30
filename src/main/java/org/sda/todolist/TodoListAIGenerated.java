@@ -83,8 +83,7 @@ public class TodoListAIGenerated {
         
         // Step 4: Final validation after normalization to catch any remaining traversal attempts
         // Double-check the normalized path doesn't contain dangerous patterns
-        String normalizedPath = filePath.toString();
-        if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
+        if (filePath.toString().contains("..") || filePath.toString().startsWith("/")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
             return false;
         }
@@ -172,13 +171,8 @@ public class TodoListAIGenerated {
             // Read the object from the file using Java object deserialization
             Object obj = objectInputStream.readObject();
             
-            // Validate that the deserialized object is not null before proceeding
-            if (obj == null) {
-                Messages.showMessage("Invalid data format: null object deserialized", true);
-                return false;
-            }
-            
             // Validate that the object is an ArrayList before casting to ensure type safety
+            // Note: instanceof handles null values (returns false), so no separate null check needed
             if (obj instanceof ArrayList) {
                 // Cast the object to ArrayList<Task> after type validation
                 // Suppress unchecked warning since we've validated the type with instanceof
