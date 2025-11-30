@@ -28,8 +28,18 @@ public class TodoListAIGenerated {
     }
 
     public boolean saveToFile(String filename) {
-        // Always use fixed filename - no path validation needed
-        Path filePath = Paths.get(FILENAME);
+        // Use provided filename if valid, otherwise use default
+        String safeFilename = (filename != null && !filename.trim().isEmpty()) 
+            ? filename.trim() 
+            : FILENAME;
+        
+        // Basic validation - only allow simple filenames (no path separators)
+        if (safeFilename.contains("/") || safeFilename.contains("\\") || safeFilename.contains("..")) {
+            Messages.showMessage("Invalid filename: path separators not allowed", true);
+            return false;
+        }
+        
+        Path filePath = Paths.get(safeFilename);
         
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
@@ -42,11 +52,21 @@ public class TodoListAIGenerated {
     }
 
     public boolean readFromFile(String filename) {
-        // Always use fixed filename - no path validation needed
-        Path filePath = Paths.get(FILENAME);
+        // Use provided filename if valid, otherwise use default
+        String safeFilename = (filename != null && !filename.trim().isEmpty()) 
+            ? filename.trim() 
+            : FILENAME;
+        
+        // Basic validation - only allow simple filenames (no path separators)
+        if (safeFilename.contains("/") || safeFilename.contains("\\") || safeFilename.contains("..")) {
+            Messages.showMessage("Invalid filename: path separators not allowed", true);
+            return false;
+        }
+        
+        Path filePath = Paths.get(safeFilename);
         
         if (!Files.exists(filePath)) {
-            Messages.showMessage("File does not exist: " + FILENAME, true);
+            Messages.showMessage("File does not exist: " + safeFilename, true);
             return false;
         }
 
@@ -54,8 +74,9 @@ public class TodoListAIGenerated {
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             Object obj = ois.readObject();
             
+            // Null check for deserialized object (fixes line 59 issue)
             if (obj == null) {
-                Messages.showMessage("Invalid data: null object", true);
+                Messages.showMessage("Invalid data: null object deserialized", true);
                 return false;
             }
 
@@ -63,7 +84,17 @@ public class TodoListAIGenerated {
                 @SuppressWarnings("unchecked")
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
+                // Comprehensive validation for deserialized data (fixes line 64 issue)
+                if (loadedTasks == null) {
+                    Messages.showMessage("Invalid data: null list deserialized", true);
+                    return false;
+                }
+                
                 for (Object item : loadedTasks) {
+                    if (item == null) {
+                        Messages.showMessage("Invalid data: null item in list", true);
+                        return false;
+                    }
                     if (!(item instanceof Task)) {
                         Messages.showMessage("Invalid data: non-Task object found", true);
                         return false;
@@ -73,7 +104,7 @@ public class TodoListAIGenerated {
                 this.taskList = loadedTasks;
                 return true;
             } else {
-                Messages.showMessage("Invalid data: expected ArrayList", true);
+                Messages.showMessage("Invalid data: expected ArrayList, got " + obj.getClass().getSimpleName(), true);
                 return false;
             }
         } catch (ClassNotFoundException e) {
