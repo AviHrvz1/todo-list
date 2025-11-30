@@ -39,13 +39,19 @@ public class TodoListAIGenerated {
         }
 
         Path filePath = Paths.get(sanitizedFilename).normalize();
+        
         if (containsPathTraversal(filePath.toString())) {
             Messages.showMessage("Invalid file path: path traversal detected after normalization", true);
             return false;
         }
 
-        if (filePath.startsWith("..") || filePath.getNameCount() == 0 || containsInvalidPathStructure(filePath)) {
+        if (containsInvalidPathStructure(filePath)) {
             Messages.showMessage("Invalid file path: invalid path structure", true);
+            return false;
+        }
+        
+        if (filePath.isAbsolute() || filePath.startsWith("..")) {
+            Messages.showMessage("Invalid file path: absolute path or parent directory reference", true);
             return false;
         }
 
@@ -58,10 +64,7 @@ public class TodoListAIGenerated {
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             objectOutputStream.writeObject(taskList);
             return true;
-        } catch (java.io.FileNotFoundException e) {
-            Messages.showMessage(String.format("Cannot create file: %s", filename), true);
-            return false;
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             Messages.showMessage(String.format("Error saving file: %s", e.getMessage()), true);
             return false;
         }
@@ -80,13 +83,19 @@ public class TodoListAIGenerated {
         }
 
         Path filePath = Paths.get(sanitizedFilename).normalize();
+        
         if (containsPathTraversal(filePath.toString())) {
             Messages.showMessage("Invalid file path: path traversal detected after normalization", true);
             return false;
         }
 
-        if (filePath.startsWith("..") || filePath.getNameCount() == 0 || containsInvalidPathStructure(filePath)) {
+        if (containsInvalidPathStructure(filePath)) {
             Messages.showMessage("Invalid file path: invalid path structure", true);
+            return false;
+        }
+        
+        if (filePath.isAbsolute() || filePath.startsWith("..")) {
+            Messages.showMessage("Invalid file path: absolute path or parent directory reference", true);
             return false;
         }
 
@@ -130,15 +139,6 @@ public class TodoListAIGenerated {
         } catch (ClassNotFoundException e) {
             Messages.showMessage(String.format("Error deserializing data: class not found - %s", e.getMessage()), true);
             return false;
-        } catch (java.io.FileNotFoundException e) {
-            Messages.showMessage(String.format("File not found: %s", filename), true);
-            return false;
-        } catch (java.io.EOFException e) {
-            Messages.showMessage("Invalid data format: unexpected end of file", true);
-            return false;
-        } catch (java.io.StreamCorruptedException e) {
-            Messages.showMessage("Invalid data format: corrupted file stream", true);
-            return false;
         } catch (IOException e) {
             Messages.showMessage(String.format("Error reading file: %s", e.getMessage()), true);
             return false;
@@ -161,12 +161,31 @@ public class TodoListAIGenerated {
     }
 
     private boolean containsPathTraversal(String path) {
-        return path.contains("..") || path.startsWith("/") || path.contains("\\");
+        if (path == null) {
+            return true;
+        }
+        return path.contains("..") || 
+               path.startsWith("/") || 
+               path.startsWith("\\") ||
+               path.contains("\\") ||
+               path.contains("../") ||
+               path.contains("..\\") ||
+               path.contains("/../") ||
+               path.contains("\\..\\");
     }
 
     private boolean containsInvalidPathStructure(Path path) {
-        return path.toString().contains("//") || path.toString().contains("\\\\") ||
-               !path.normalize().equals(path) || path.normalize().toString().contains("..");
+        if (path == null) {
+            return true;
+        }
+        String pathStr = path.toString();
+        return pathStr.contains("//") || 
+               pathStr.contains("\\\\") ||
+               path.isAbsolute() ||
+               path.startsWith("..") ||
+               path.getNameCount() == 0 ||
+               !path.normalize().equals(path) || 
+               path.normalize().toString().contains("..");
     }
 
     private boolean containsInvalidCharacters(String path) {
