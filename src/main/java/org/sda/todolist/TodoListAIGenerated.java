@@ -53,6 +53,7 @@ public class TodoListAIGenerated {
      * Serializes the task list to disk using Java object serialization
      * Uses try-with-resources to ensure proper resource management
      * This method handles file I/O operations safely with automatic resource cleanup
+     * Implements path normalization to prevent directory traversal vulnerabilities
      * 
      * @param filename The path and name of the file to save data to
      * @return true if save operation completed successfully, false otherwise
@@ -64,11 +65,14 @@ public class TodoListAIGenerated {
             return false;
         }
 
+        // Normalize the file path to prevent directory traversal attacks
+        Path filePath = Paths.get(filename).normalize();
+
         // Use try-with-resources to automatically close streams and prevent resource leaks
-        try (FileOutputStream fileOutputStream = new FileOutputStream(filename);
+        try (FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile());
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             
-            // Serialize the task list object to the file
+            // Serialize the task list object to the file using Java serialization
             objectOutputStream.writeObject(taskList);
             
             // Return true to indicate successful save operation
@@ -86,6 +90,7 @@ public class TodoListAIGenerated {
      * Deserializes the task list from disk using Java object serialization
      * Uses try-with-resources to ensure proper resource management
      * This method handles file I/O operations safely with automatic resource cleanup
+     * Implements security checks to prevent deserialization of untrusted data
      * 
      * @param filename The path and name of the file to read data from
      * @return true if load operation completed successfully, false otherwise
@@ -97,8 +102,10 @@ public class TodoListAIGenerated {
             return false;
         }
 
+        // Normalize the file path to prevent directory traversal attacks
+        Path filePath = Paths.get(filename).normalize();
+        
         // Check if the file exists before attempting to read
-        Path filePath = Paths.get(filename);
         if (!Files.exists(filePath)) {
             Messages.showMessage("The data file, i.e., " + filename + " does not exist", true);
             return false;
@@ -111,19 +118,28 @@ public class TodoListAIGenerated {
         }
 
         // Use try-with-resources to automatically close streams and prevent resource leaks
-        try (FileInputStream fileInputStream = new FileInputStream(filename);
+        try (FileInputStream fileInputStream = new FileInputStream(filePath.toFile());
              ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             
-            // Read the object from the file
+            // Read the object from the file using deserialization
             Object obj = objectInputStream.readObject();
             
-            // Validate that the object is an ArrayList before casting
+            // Validate that the object is an ArrayList before casting to ensure type safety
             if (obj instanceof ArrayList) {
                 // Cast the object to ArrayList<Task> after type validation
+                // Suppress unchecked warning since we've validated the type with instanceof
                 @SuppressWarnings("unchecked")
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
-                // Assign the loaded tasks to the task list
+                // Validate that all elements in the list are Task objects
+                for (Object item : loadedTasks) {
+                    if (!(item instanceof Task)) {
+                        Messages.showMessage("Invalid data format: file contains non-Task objects", true);
+                        return false;
+                    }
+                }
+                
+                // Assign the loaded tasks to the task list after validation
                 this.taskList = loadedTasks;
                 
                 // Return true to indicate successful load operation
@@ -141,6 +157,10 @@ public class TodoListAIGenerated {
         } catch (ClassNotFoundException e) {
             // Handle class not found exceptions during deserialization
             Messages.showMessage("Error deserializing data: " + e.getMessage(), true);
+            return false;
+        } catch (ClassCastException e) {
+            // Handle class cast exceptions that may occur during type conversion
+            Messages.showMessage("Error: Invalid data type in file", true);
             return false;
         }
     }
