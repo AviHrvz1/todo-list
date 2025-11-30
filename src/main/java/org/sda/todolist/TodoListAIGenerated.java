@@ -66,12 +66,23 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Sanitize and normalize the file path to prevent directory traversal attacks
-        // This removes any ".." or "." components that could be used for path traversal
+        // Immediately sanitize the filename to prevent any path traversal attacks
+        // Trim whitespace and validate the input before any path operations
         String sanitizedFilename = filename.trim();
+        
+        // Validate that the filename doesn't contain dangerous path traversal patterns
+        // Check for ".." and "/" patterns that could be used for directory traversal
+        if (sanitizedFilename.contains("..") || sanitizedFilename.startsWith("/") || sanitizedFilename.contains("\\")) {
+            Messages.showMessage("Invalid file path: path traversal detected", true);
+            return false;
+        }
+        
+        // Normalize the file path to remove any remaining ".." or "." components
+        // This provides an additional layer of security against path traversal attacks
         Path filePath = Paths.get(sanitizedFilename).normalize();
         
-        // Additional validation: ensure the normalized path doesn't contain dangerous patterns
+        // Final validation: ensure the normalized path doesn't contain dangerous patterns
+        // Double-check after normalization to catch any remaining traversal attempts
         String normalizedPath = filePath.toString();
         if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
@@ -115,12 +126,23 @@ public class TodoListAIGenerated {
             return false;
         }
 
-        // Sanitize and normalize the file path to prevent directory traversal attacks
-        // This removes any ".." or "." components that could be used for path traversal
+        // Immediately sanitize the filename to prevent any path traversal attacks
+        // Trim whitespace and validate the input before any path operations
         String sanitizedFilename = filename.trim();
+        
+        // Validate that the filename doesn't contain dangerous path traversal patterns
+        // Check for ".." and "/" patterns that could be used for directory traversal
+        if (sanitizedFilename.contains("..") || sanitizedFilename.startsWith("/") || sanitizedFilename.contains("\\")) {
+            Messages.showMessage("Invalid file path: path traversal detected", true);
+            return false;
+        }
+        
+        // Normalize the file path to remove any remaining ".." or "." components
+        // This provides an additional layer of security against path traversal attacks
         Path filePath = Paths.get(sanitizedFilename).normalize();
         
-        // Additional validation: ensure the normalized path doesn't contain dangerous patterns
+        // Final validation: ensure the normalized path doesn't contain dangerous patterns
+        // Double-check after normalization to catch any remaining traversal attempts
         String normalizedPath = filePath.toString();
         if (normalizedPath.contains("..") || normalizedPath.startsWith("/")) {
             Messages.showMessage("Invalid file path: path traversal detected", true);
@@ -155,15 +177,29 @@ public class TodoListAIGenerated {
                 @SuppressWarnings("unchecked")
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
                 
+                // Comprehensive validation of deserialized data to prevent untrusted data injection
+                // First, check if the list is null (should not happen, but defensive programming)
+                if (loadedTasks == null) {
+                    Messages.showMessage("Invalid data format: null list detected", true);
+                    return false;
+                }
+                
                 // Validate that all elements in the list are Task objects to prevent untrusted data
+                // Iterate through each element and verify it is a valid Task instance
                 for (Object item : loadedTasks) {
+                    // Check if the item is null before type checking
+                    if (item == null) {
+                        Messages.showMessage("Invalid data format: null item in list", true);
+                        return false;
+                    }
+                    // Verify that the item is an instance of Task class
                     if (!(item instanceof Task)) {
                         Messages.showMessage("Invalid data format: file contains non-Task objects", true);
                         return false;
                     }
                 }
                 
-                // Assign the loaded tasks to the task list after validation
+                // Assign the loaded tasks to the task list after comprehensive validation
                 this.taskList = loadedTasks;
                 
                 // Return true to indicate successful load operation
