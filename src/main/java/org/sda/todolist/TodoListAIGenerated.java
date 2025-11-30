@@ -52,23 +52,30 @@ public class TodoListAIGenerated {
      * AI-Generated method to persist task data to a file
      * Serializes the task list to disk using Java object serialization
      * Uses try-with-resources to ensure proper resource management
+     * This method handles file I/O operations safely with automatic resource cleanup
      * 
      * @param filename The path and name of the file to save data to
      * @return true if save operation completed successfully, false otherwise
      */
     public boolean saveToFile(String filename) {
+        // Validate input parameter to ensure it is not null or empty
         if (filename == null || filename.trim().isEmpty()) {
             Messages.showMessage("Filename cannot be null or empty", true);
             return false;
         }
 
+        // Use try-with-resources to automatically close streams and prevent resource leaks
         try (FileOutputStream fileOutputStream = new FileOutputStream(filename);
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             
+            // Serialize the task list object to the file
             objectOutputStream.writeObject(taskList);
+            
+            // Return true to indicate successful save operation
             return true;
             
         } catch (IOException e) {
+            // Handle IO exceptions that may occur during file operations
             Messages.showMessage("Error saving file: " + e.getMessage(), true);
             return false;
         }
@@ -78,45 +85,61 @@ public class TodoListAIGenerated {
      * AI-Generated method to load task data from a file
      * Deserializes the task list from disk using Java object serialization
      * Uses try-with-resources to ensure proper resource management
+     * This method handles file I/O operations safely with automatic resource cleanup
      * 
      * @param filename The path and name of the file to read data from
      * @return true if load operation completed successfully, false otherwise
      */
     public boolean readFromFile(String filename) {
+        // Validate input parameter to ensure it is not null or empty
         if (filename == null || filename.trim().isEmpty()) {
             Messages.showMessage("Filename cannot be null or empty", true);
             return false;
         }
 
+        // Check if the file exists before attempting to read
         Path filePath = Paths.get(filename);
         if (!Files.exists(filePath)) {
             Messages.showMessage("The data file, i.e., " + filename + " does not exist", true);
             return false;
         }
 
+        // Check if the file is readable before attempting to read
         if (!Files.isReadable(filePath)) {
             Messages.showMessage("The data file, i.e., " + filename + " is not readable", true);
             return false;
         }
 
+        // Use try-with-resources to automatically close streams and prevent resource leaks
         try (FileInputStream fileInputStream = new FileInputStream(filename);
              ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
             
+            // Read the object from the file
             Object obj = objectInputStream.readObject();
+            
+            // Validate that the object is an ArrayList before casting
             if (obj instanceof ArrayList) {
+                // Cast the object to ArrayList<Task> after type validation
                 @SuppressWarnings("unchecked")
                 ArrayList<Task> loadedTasks = (ArrayList<Task>) obj;
+                
+                // Assign the loaded tasks to the task list
                 this.taskList = loadedTasks;
+                
+                // Return true to indicate successful load operation
                 return true;
             } else {
+                // Handle case where file contains invalid data format
                 Messages.showMessage("Invalid data format in file: " + filename, true);
                 return false;
             }
             
         } catch (IOException e) {
+            // Handle IO exceptions that may occur during file operations
             Messages.showMessage("Error reading file: " + e.getMessage(), true);
             return false;
         } catch (ClassNotFoundException e) {
+            // Handle class not found exceptions during deserialization
             Messages.showMessage("Error deserializing data: " + e.getMessage(), true);
             return false;
         }
